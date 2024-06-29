@@ -1,0 +1,10 @@
+Assembly Accession	Assembly Name	Organism Name	Organism Infraspecific Names Breed	Organism Infraspecific Names Strain	Organism Infraspecific Names Cultivar	Organism Infraspecific Names Ecotype	Organism Infraspecific Names Isolate	Organism Infraspecific Names Sex	Annotation Name	Assembly Level	Assembly Release Date	WGS project accession	Assembly Stats Number of Scaffolds
+GCA_001910725.1	ASM191072v1	Phanerodontia chrysosporium		ATCC 20696						Contig	2016-12-20	MJGA01	
+GCA_019973155.2	ASM1997315v2	Phanerochaete sordida		YK-624					Annotation submitted by Shizuoka University	Contig	2022-04-26	BPQB01	
+GCA_027924225.1	adusta_1.0	Bjerkandera adusta		Dec 1						Scaffold	2022-12-13	BSCZ01	3240
+GCA_000300595.1	Phanerochaete carnosa HHB-10118-Sp v1.0	Phanerochaete carnosa HHB-10118-sp		HHB-10118-sp					Annotation submitted by DOE Joint Genome Institute	Scaffold	2012-10-16	AEHB01	1137
+GCF_000300595.1	Phanerochaete carnosa HHB-10118-Sp v1.0	Phanerochaete carnosa HHB-10118-sp		HHB-10118-sp					Annotation submitted by DOE Joint Genome Institute	Scaffold	2012-10-16	AEHB01	1137
+GCA_000832265.1	Phlgi1	Phlebiopsis gigantea 11061_1 CR5-6		11061_1 CR5-6					Annotation submitted by DOE Joint Genome Institute	Scaffold	2015-02-06	AZAG01	573
+GCA_035772785.1	ASM3577278v1	Phlebiopsis flavidoalba		KH2_1						Contig	2024-01-17	JAOCPU01	
+GCA_024811115.1	FSU_Tcaeru_v2	Terana caerulea		CBS 452.86						Contig	2022-08-31	JAKOGH01	
+GCA_000167175.1	ASM16717v1	Phanerochaete chrysosporium RP-78		RP-78						Contig	2004-04-29	AADS01	

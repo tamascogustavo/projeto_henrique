@@ -1,0 +1,19 @@
+Name,KEGG compound,Coefficient
+Water,C00001,1000.0
+Glucose,C00031,22.6
+Bicarbonate,C00288,100.0
+Diphosphate,C00013,100.0
+Iron,C00023,100.0
+Oxygen,C00007,6.3
+NH3,C00014,100.0
+SLF,C00059,100.0
+PI,C00009,0.89
+Potassium,C00238,4.44
+Sodium,C01330,0.75
+Biotin,C00120,1.42e-06
+Choline,C00114,9.2e-05
+Inositol,C00137,0.00193
+(R)-Pantothenate,C00864,0.0002
+Uracile,C00106,0.4
+Antimycin,C11339,1000.0
+5-Methyltetrahydropteroyltri-L-glutamate,C04489,12000.0

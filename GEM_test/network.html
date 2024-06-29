@@ -1,0 +1,444 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 100%;
+                 height: 600px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": 0, "id": "acald_c", "label": "acald_c", "shape": "dot", "title": "acald_c"}, {"color": 0, "id": "ACALD", "label": "ACALD", "shape": "dot", "title": "ACALD"}, {"color": 0, "id": "accoa_c", "label": "accoa_c", "shape": "dot", "title": "accoa_c"}, {"color": 0, "id": "coa_c", "label": "coa_c", "shape": "dot", "title": "coa_c"}, {"color": 1, "id": "h_c", "label": "h_c", "shape": "dot", "title": "h_c"}, {"color": 0, "id": "nad_c", "label": "nad_c", "shape": "dot", "title": "nad_c"}, {"color": 0, "id": "nadh_c", "label": "nadh_c", "shape": "dot", "title": "nadh_c"}, {"color": 0, "id": "ACALDt", "label": "ACALDt", "shape": "dot", "title": "ACALDt"}, {"color": 0, "id": "acald_e", "label": "acald_e", "shape": "dot", "title": "acald_e"}, {"color": 2, "id": "ac_c", "label": "ac_c", "shape": "dot", "title": "ac_c"}, {"color": 2, "id": "ACKr", "label": "ACKr", "shape": "dot", "title": "ACKr"}, {"color": 2, "id": "actp_c", "label": "actp_c", "shape": "dot", "title": "actp_c"}, {"color": 3, "id": "adp_c", "label": "adp_c", "shape": "dot", "title": "adp_c"}, {"color": 3, "id": "atp_c", "label": "atp_c", "shape": "dot", "title": "atp_c"}, {"color": 0, "id": "acon_C_c", "label": "acon_C_c", "shape": "dot", "title": "acon_C_c"}, {"color": 0, "id": "ACONTa", "label": "ACONTa", "shape": "dot", "title": "ACONTa"}, {"color": 0, "id": "cit_c", "label": "cit_c", "shape": "dot", "title": "cit_c"}, {"color": 3, "id": "h2o_c", "label": "h2o_c", "shape": "dot", "title": "h2o_c"}, {"color": 0, "id": "ACONTb", "label": "ACONTb", "shape": "dot", "title": "ACONTb"}, {"color": 0, "id": "icit_c", "label": "icit_c", "shape": "dot", "title": "icit_c"}, {"color": 2, "id": "ACt2r", "label": "ACt2r", "shape": "dot", "title": "ACt2r"}, {"color": 2, "id": "ac_e", "label": "ac_e", "shape": "dot", "title": "ac_e"}, {"color": 5, "id": "h_e", "label": "h_e", "shape": "dot", "title": "h_e"}, {"color": 3, "id": "ADK1", "label": "ADK1", "shape": "dot", "title": "ADK1"}, {"color": 3, "id": "amp_c", "label": "amp_c", "shape": "dot", "title": "amp_c"}, {"color": 3, "id": "akg_c", "label": "akg_c", "shape": "dot", "title": "akg_c"}, {"color": 0, "id": "AKGDH", "label": "AKGDH", "shape": "dot", "title": "AKGDH"}, {"color": 6, "id": "co2_c", "label": "co2_c", "shape": "dot", "title": "co2_c"}, {"color": 0, "id": "succoa_c", "label": "succoa_c", "shape": "dot", "title": "succoa_c"}, {"color": 1, "id": "AKGt2r", "label": "AKGt2r", "shape": "dot", "title": "AKGt2r"}, {"color": 1, "id": "akg_e", "label": "akg_e", "shape": "dot", "title": "akg_e"}, {"color": 0, "id": "ALCD2x", "label": "ALCD2x", "shape": "dot", "title": "ALCD2x"}, {"color": 1, "id": "etoh_c", "label": "etoh_c", "shape": "dot", "title": "etoh_c"}, {"color": 3, "id": "ATPM", "label": "ATPM", "shape": "dot", "title": "ATPM"}, {"color": 3, "id": "pi_c", "label": "pi_c", "shape": "dot", "title": "pi_c"}, {"color": 3, "id": "ATPS4r", "label": "ATPS4r", "shape": "dot", "title": "ATPS4r"}, {"color": 3, "id": "3pg_c", "label": "3pg_c", "shape": "dot", "title": "3pg_c"}, {"color": 3, "id": "Biomass_Ecoli_core", "label": "Biomass_Ecoli_core", "shape": "dot", "title": "Biomass_Ecoli_core"}, {"color": 7, "id": "e4p_c", "label": "e4p_c", "shape": "dot", "title": "e4p_c"}, {"color": 7, "id": "f6p_c", "label": "f6p_c", "shape": "dot", "title": "f6p_c"}, {"color": 7, "id": "g3p_c", "label": "g3p_c", "shape": "dot", "title": "g3p_c"}, {"color": 6, "id": "g6p_c", "label": "g6p_c", "shape": "dot", "title": "g6p_c"}, {"color": 3, "id": "gln__L_c", "label": "gln__L_c", "shape": "dot", "title": "gln__L_c"}, {"color": 3, "id": "glu__L_c", "label": "glu__L_c", "shape": "dot", "title": "glu__L_c"}, {"color": 3, "id": "nadp_c", "label": "nadp_c", "shape": "dot", "title": "nadp_c"}, {"color": 3, "id": "nadph_c", "label": "nadph_c", "shape": "dot", "title": "nadph_c"}, {"color": 6, "id": "oaa_c", "label": "oaa_c", "shape": "dot", "title": "oaa_c"}, {"color": 6, "id": "pep_c", "label": "pep_c", "shape": "dot", "title": "pep_c"}, {"color": 6, "id": "pyr_c", "label": "pyr_c", "shape": "dot", "title": "pyr_c"}, {"color": 7, "id": "r5p_c", "label": "r5p_c", "shape": "dot", "title": "r5p_c"}, {"color": 6, "id": "CO2t", "label": "CO2t", "shape": "dot", "title": "CO2t"}, {"color": 6, "id": "co2_e", "label": "co2_e", "shape": "dot", "title": "co2_e"}, {"color": 0, "id": "CS", "label": "CS", "shape": "dot", "title": "CS"}, {"color": 5, "id": "CYTBD", "label": "CYTBD", "shape": "dot", "title": "CYTBD"}, {"color": 5, "id": "o2_c", "label": "o2_c", "shape": "dot", "title": "o2_c"}, {"color": 5, "id": "q8_c", "label": "q8_c", "shape": "dot", "title": "q8_c"}, {"color": 5, "id": "q8h2_c", "label": "q8h2_c", "shape": "dot", "title": "q8h2_c"}, {"color": 1, "id": "D_LACt2", "label": "D_LACt2", "shape": "dot", "title": "D_LACt2"}, {"color": 1, "id": "lac__D_c", "label": "lac__D_c", "shape": "dot", "title": "lac__D_c"}, {"color": 1, "id": "lac__D_e", "label": "lac__D_e", "shape": "dot", "title": "lac__D_e"}, {"color": 3, "id": "2pg_c", "label": "2pg_c", "shape": "dot", "title": "2pg_c"}, {"color": 3, "id": "ENO", "label": "ENO", "shape": "dot", "title": "ENO"}, {"color": 1, "id": "ETOHt2r", "label": "ETOHt2r", "shape": "dot", "title": "ETOHt2r"}, {"color": 1, "id": "etoh_e", "label": "etoh_e", "shape": "dot", "title": "etoh_e"}, {"color": 2, "id": "EX_ac_e", "label": "EX_ac_e", "shape": "dot", "title": "EX_ac_e"}, {"color": 0, "id": "EX_acald_e", "label": "EX_acald_e", "shape": "dot", "title": "EX_acald_e"}, {"color": 1, "id": "EX_akg_e", "label": "EX_akg_e", "shape": "dot", "title": "EX_akg_e"}, {"color": 6, "id": "EX_co2_e", "label": "EX_co2_e", "shape": "dot", "title": "EX_co2_e"}, {"color": 1, "id": "EX_etoh_e", "label": "EX_etoh_e", "shape": "dot", "title": "EX_etoh_e"}, {"color": 8, "id": "for_e", "label": "for_e", "shape": "dot", "title": "for_e"}, {"color": 8, "id": "EX_for_e", "label": "EX_for_e", "shape": "dot", "title": "EX_for_e"}, {"color": 6, "id": "fru_e", "label": "fru_e", "shape": "dot", "title": "fru_e"}, {"color": 6, "id": "EX_fru_e", "label": "EX_fru_e", "shape": "dot", "title": "EX_fru_e"}, {"color": 5, "id": "fum_e", "label": "fum_e", "shape": "dot", "title": "fum_e"}, {"color": 5, "id": "EX_fum_e", "label": "EX_fum_e", "shape": "dot", "title": "EX_fum_e"}, {"color": 6, "id": "glc__D_e", "label": "glc__D_e", "shape": "dot", "title": "glc__D_e"}, {"color": 6, "id": "EX_glc__D_e", "label": "EX_glc__D_e", "shape": "dot", "title": "EX_glc__D_e"}, {"color": 3, "id": "gln__L_e", "label": "gln__L_e", "shape": "dot", "title": "gln__L_e"}, {"color": 3, "id": "EX_gln__L_e", "label": "EX_gln__L_e", "shape": "dot", "title": "EX_gln__L_e"}, {"color": 1, "id": "glu__L_e", "label": "glu__L_e", "shape": "dot", "title": "glu__L_e"}, {"color": 1, "id": "EX_glu__L_e", "label": "EX_glu__L_e", "shape": "dot", "title": "EX_glu__L_e"}, {"color": 5, "id": "EX_h_e", "label": "EX_h_e", "shape": "dot", "title": "EX_h_e"}, {"color": 9, "id": "h2o_e", "label": "h2o_e", "shape": "dot", "title": "h2o_e"}, {"color": 9, "id": "EX_h2o_e", "label": "EX_h2o_e", "shape": "dot", "title": "EX_h2o_e"}, {"color": 1, "id": "EX_lac__D_e", "label": "EX_lac__D_e", "shape": "dot", "title": "EX_lac__D_e"}, {"color": 1, "id": "mal__L_e", "label": "mal__L_e", "shape": "dot", "title": "mal__L_e"}, {"color": 1, "id": "EX_mal__L_e", "label": "EX_mal__L_e", "shape": "dot", "title": "EX_mal__L_e"}, {"color": 4, "id": "nh4_e", "label": "nh4_e", "shape": "dot", "title": "nh4_e"}, {"color": 4, "id": "EX_nh4_e", "label": "EX_nh4_e", "shape": "dot", "title": "EX_nh4_e"}, {"color": 5, "id": "o2_e", "label": "o2_e", "shape": "dot", "title": "o2_e"}, {"color": 5, "id": "EX_o2_e", "label": "EX_o2_e", "shape": "dot", "title": "EX_o2_e"}, {"color": 5, "id": "pi_e", "label": "pi_e", "shape": "dot", "title": "pi_e"}, {"color": 5, "id": "EX_pi_e", "label": "EX_pi_e", "shape": "dot", "title": "EX_pi_e"}, {"color": 5, "id": "pyr_e", "label": "pyr_e", "shape": "dot", "title": "pyr_e"}, {"color": 5, "id": "EX_pyr_e", "label": "EX_pyr_e", "shape": "dot", "title": "EX_pyr_e"}, {"color": 5, "id": "succ_e", "label": "succ_e", "shape": "dot", "title": "succ_e"}, {"color": 5, "id": "EX_succ_e", "label": "EX_succ_e", "shape": "dot", "title": "EX_succ_e"}, {"color": 7, "id": "dhap_c", "label": "dhap_c", "shape": "dot", "title": "dhap_c"}, {"color": 7, "id": "FBA", "label": "FBA", "shape": "dot", "title": "FBA"}, {"color": 7, "id": "fdp_c", "label": "fdp_c", "shape": "dot", "title": "fdp_c"}, {"color": 7, "id": "FBP", "label": "FBP", "shape": "dot", "title": "FBP"}, {"color": 8, "id": "for_c", "label": "for_c", "shape": "dot", "title": "for_c"}, {"color": 8, "id": "FORt2", "label": "FORt2", "shape": "dot", "title": "FORt2"}, {"color": 8, "id": "FORti", "label": "FORti", "shape": "dot", "title": "FORti"}, {"color": 5, "id": "fum_c", "label": "fum_c", "shape": "dot", "title": "fum_c"}, {"color": 5, "id": "FRD7", "label": "FRD7", "shape": "dot", "title": "FRD7"}, {"color": 5, "id": "succ_c", "label": "succ_c", "shape": "dot", "title": "succ_c"}, {"color": 6, "id": "FRUpts2", "label": "FRUpts2", "shape": "dot", "title": "FRUpts2"}, {"color": 6, "id": "FUM", "label": "FUM", "shape": "dot", "title": "FUM"}, {"color": 6, "id": "mal__L_c", "label": "mal__L_c", "shape": "dot", "title": "mal__L_c"}, {"color": 5, "id": "FUMt2_2", "label": "FUMt2_2", "shape": "dot", "title": "FUMt2_2"}, {"color": 1, "id": "6pgl_c", "label": "6pgl_c", "shape": "dot", "title": "6pgl_c"}, {"color": 1, "id": "G6PDH2r", "label": "G6PDH2r", "shape": "dot", "title": "G6PDH2r"}, {"color": 0, "id": "13dpg_c", "label": "13dpg_c", "shape": "dot", "title": "13dpg_c"}, {"color": 0, "id": "GAPD", "label": "GAPD", "shape": "dot", "title": "GAPD"}, {"color": 6, "id": "GLCpts", "label": "GLCpts", "shape": "dot", "title": "GLCpts"}, {"color": 3, "id": "GLNS", "label": "GLNS", "shape": "dot", "title": "GLNS"}, {"color": 3, "id": "nh4_c", "label": "nh4_c", "shape": "dot", "title": "nh4_c"}, {"color": 3, "id": "GLNabc", "label": "GLNabc", "shape": "dot", "title": "GLNabc"}, {"color": 3, "id": "GLUDy", "label": "GLUDy", "shape": "dot", "title": "GLUDy"}, {"color": 3, "id": "GLUN", "label": "GLUN", "shape": "dot", "title": "GLUN"}, {"color": 3, "id": "GLUSy", "label": "GLUSy", "shape": "dot", "title": "GLUSy"}, {"color": 1, "id": "GLUt2r", "label": "GLUt2r", "shape": "dot", "title": "GLUt2r"}, {"color": 7, "id": "6pgc_c", "label": "6pgc_c", "shape": "dot", "title": "6pgc_c"}, {"color": 7, "id": "GND", "label": "GND", "shape": "dot", "title": "GND"}, {"color": 7, "id": "ru5p__D_c", "label": "ru5p__D_c", "shape": "dot", "title": "ru5p__D_c"}, {"color": 9, "id": "H2Ot", "label": "H2Ot", "shape": "dot", "title": "H2Ot"}, {"color": 3, "id": "ICDHyr", "label": "ICDHyr", "shape": "dot", "title": "ICDHyr"}, {"color": 0, "id": "glx_c", "label": "glx_c", "shape": "dot", "title": "glx_c"}, {"color": 0, "id": "ICL", "label": "ICL", "shape": "dot", "title": "ICL"}, {"color": 1, "id": "LDH_D", "label": "LDH_D", "shape": "dot", "title": "LDH_D"}, {"color": 0, "id": "MALS", "label": "MALS", "shape": "dot", "title": "MALS"}, {"color": 1, "id": "MALt2_2", "label": "MALt2_2", "shape": "dot", "title": "MALt2_2"}, {"color": 6, "id": "MDH", "label": "MDH", "shape": "dot", "title": "MDH"}, {"color": 6, "id": "ME1", "label": "ME1", "shape": "dot", "title": "ME1"}, {"color": 6, "id": "ME2", "label": "ME2", "shape": "dot", "title": "ME2"}, {"color": 5, "id": "NADH16", "label": "NADH16", "shape": "dot", "title": "NADH16"}, {"color": 3, "id": "NADTRHD", "label": "NADTRHD", "shape": "dot", "title": "NADTRHD"}, {"color": 4, "id": "NH4t", "label": "NH4t", "shape": "dot", "title": "NH4t"}, {"color": 5, "id": "O2t", "label": "O2t", "shape": "dot", "title": "O2t"}, {"color": 0, "id": "PDH", "label": "PDH", "shape": "dot", "title": "PDH"}, {"color": 7, "id": "PFK", "label": "PFK", "shape": "dot", "title": "PFK"}, {"color": 8, "id": "PFL", "label": "PFL", "shape": "dot", "title": "PFL"}, {"color": 6, "id": "PGI", "label": "PGI", "shape": "dot", "title": "PGI"}, {"color": 3, "id": "PGK", "label": "PGK", "shape": "dot", "title": "PGK"}, {"color": 1, "id": "PGL", "label": "PGL", "shape": "dot", "title": "PGL"}, {"color": 3, "id": "PGM", "label": "PGM", "shape": "dot", "title": "PGM"}, {"color": 5, "id": "PIt2r", "label": "PIt2r", "shape": "dot", "title": "PIt2r"}, {"color": 6, "id": "PPC", "label": "PPC", "shape": "dot", "title": "PPC"}, {"color": 6, "id": "PPCK", "label": "PPCK", "shape": "dot", "title": "PPCK"}, {"color": 3, "id": "PPS", "label": "PPS", "shape": "dot", "title": "PPS"}, {"color": 2, "id": "PTAr", "label": "PTAr", "shape": "dot", "title": "PTAr"}, {"color": 6, "id": "PYK", "label": "PYK", "shape": "dot", "title": "PYK"}, {"color": 5, "id": "PYRt2", "label": "PYRt2", "shape": "dot", "title": "PYRt2"}, {"color": 7, "id": "RPE", "label": "RPE", "shape": "dot", "title": "RPE"}, {"color": 7, "id": "xu5p__D_c", "label": "xu5p__D_c", "shape": "dot", "title": "xu5p__D_c"}, {"color": 7, "id": "RPI", "label": "RPI", "shape": "dot", "title": "RPI"}, {"color": 5, "id": "SUCCt2_2", "label": "SUCCt2_2", "shape": "dot", "title": "SUCCt2_2"}, {"color": 5, "id": "SUCCt3", "label": "SUCCt3", "shape": "dot", "title": "SUCCt3"}, {"color": 5, "id": "SUCDi", "label": "SUCDi", "shape": "dot", "title": "SUCDi"}, {"color": 0, "id": "SUCOAS", "label": "SUCOAS", "shape": "dot", "title": "SUCOAS"}, {"color": 7, "id": "TALA", "label": "TALA", "shape": "dot", "title": "TALA"}, {"color": 7, "id": "s7p_c", "label": "s7p_c", "shape": "dot", "title": "s7p_c"}, {"color": 0, "id": "THD2", "label": "THD2", "shape": "dot", "title": "THD2"}, {"color": 7, "id": "TKT1", "label": "TKT1", "shape": "dot", "title": "TKT1"}, {"color": 7, "id": "TKT2", "label": "TKT2", "shape": "dot", "title": "TKT2"}, {"color": 7, "id": "TPI", "label": "TPI", "shape": "dot", "title": "TPI"}]);
+                  edges = new vis.DataSet([{"from": "acald_c", "to": "ACALD", "value": 1.0}, {"from": "accoa_c", "to": "ACALD", "value": 1.0}, {"from": "coa_c", "to": "ACALD", "value": 1.0}, {"from": "h_c", "to": "ACALD", "value": 1.0}, {"from": "nad_c", "to": "ACALD", "value": 1.0}, {"from": "nadh_c", "to": "ACALD", "value": 1.0}, {"from": "acald_c", "to": "ACALDt", "value": 1.0}, {"from": "acald_e", "to": "ACALDt", "value": 1.0}, {"from": "ac_c", "to": "ACKr", "value": 1.0}, {"from": "actp_c", "to": "ACKr", "value": 1.0}, {"from": "adp_c", "to": "ACKr", "value": 1.0}, {"from": "atp_c", "to": "ACKr", "value": 1.0}, {"from": "acon_C_c", "to": "ACONTa", "value": 1.0}, {"from": "cit_c", "to": "ACONTa", "value": 1.0}, {"from": "h2o_c", "to": "ACONTa", "value": 1.0}, {"from": "acon_C_c", "to": "ACONTb", "value": 1.0}, {"from": "h2o_c", "to": "ACONTb", "value": 1.0}, {"from": "icit_c", "to": "ACONTb", "value": 1.0}, {"from": "ac_c", "to": "ACt2r", "value": 1.0}, {"from": "ac_e", "to": "ACt2r", "value": 1.0}, {"from": "h_c", "to": "ACt2r", "value": 1.0}, {"from": "h_e", "to": "ACt2r", "value": 1.0}, {"from": "adp_c", "to": "ADK1", "value": 2.0}, {"from": "amp_c", "to": "ADK1", "value": 1.0}, {"from": "atp_c", "to": "ADK1", "value": 1.0}, {"from": "akg_c", "to": "AKGDH", "value": 1.0}, {"from": "co2_c", "to": "AKGDH", "value": 1.0}, {"from": "coa_c", "to": "AKGDH", "value": 1.0}, {"from": "nad_c", "to": "AKGDH", "value": 1.0}, {"from": "nadh_c", "to": "AKGDH", "value": 1.0}, {"from": "succoa_c", "to": "AKGDH", "value": 1.0}, {"from": "akg_c", "to": "AKGt2r", "value": 1.0}, {"from": "akg_e", "to": "AKGt2r", "value": 1.0}, {"from": "h_c", "to": "AKGt2r", "value": 1.0}, {"from": "h_e", "to": "AKGt2r", "value": 1.0}, {"from": "acald_c", "to": "ALCD2x", "value": 1.0}, {"from": "etoh_c", "to": "ALCD2x", "value": 1.0}, {"from": "h_c", "to": "ALCD2x", "value": 1.0}, {"from": "nad_c", "to": "ALCD2x", "value": 1.0}, {"from": "nadh_c", "to": "ALCD2x", "value": 1.0}, {"from": "adp_c", "to": "ATPM", "value": 1.0}, {"from": "atp_c", "to": "ATPM", "value": 1.0}, {"from": "h2o_c", "to": "ATPM", "value": 1.0}, {"from": "h_c", "to": "ATPM", "value": 1.0}, {"from": "pi_c", "to": "ATPM", "value": 1.0}, {"from": "adp_c", "to": "ATPS4r", "value": 1.0}, {"from": "atp_c", "to": "ATPS4r", "value": 1.0}, {"from": "h2o_c", "to": "ATPS4r", "value": 1.0}, {"from": "h_c", "to": "ATPS4r", "value": 3.0}, {"from": "h_e", "to": "ATPS4r", "value": 4.0}, {"from": "pi_c", "to": "ATPS4r", "value": 1.0}, {"from": "3pg_c", "to": "Biomass_Ecoli_core", "value": 1.496}, {"from": "accoa_c", "to": "Biomass_Ecoli_core", "value": 3.7478}, {"from": "adp_c", "to": "Biomass_Ecoli_core", "value": 59.81}, {"from": "akg_c", "to": "Biomass_Ecoli_core", "value": 4.1182}, {"from": "atp_c", "to": "Biomass_Ecoli_core", "value": 59.81}, {"from": "coa_c", "to": "Biomass_Ecoli_core", "value": 3.7478}, {"from": "e4p_c", "to": "Biomass_Ecoli_core", "value": 0.361}, {"from": "f6p_c", "to": "Biomass_Ecoli_core", "value": 0.0709}, {"from": "g3p_c", "to": "Biomass_Ecoli_core", "value": 0.129}, {"from": "g6p_c", "to": "Biomass_Ecoli_core", "value": 0.205}, {"from": "gln__L_c", "to": "Biomass_Ecoli_core", "value": 0.2557}, {"from": "glu__L_c", "to": "Biomass_Ecoli_core", "value": 4.9414}, {"from": "h2o_c", "to": "Biomass_Ecoli_core", "value": 59.81}, {"from": "h_c", "to": "Biomass_Ecoli_core", "value": 59.81}, {"from": "nad_c", "to": "Biomass_Ecoli_core", "value": 3.547}, {"from": "nadh_c", "to": "Biomass_Ecoli_core", "value": 3.547}, {"from": "nadp_c", "to": "Biomass_Ecoli_core", "value": 13.0279}, {"from": "nadph_c", "to": "Biomass_Ecoli_core", "value": 13.0279}, {"from": "oaa_c", "to": "Biomass_Ecoli_core", "value": 1.7867}, {"from": "pep_c", "to": "Biomass_Ecoli_core", "value": 0.5191}, {"from": "pi_c", "to": "Biomass_Ecoli_core", "value": 59.81}, {"from": "pyr_c", "to": "Biomass_Ecoli_core", "value": 2.8328}, {"from": "r5p_c", "to": "Biomass_Ecoli_core", "value": 0.8977}, {"from": "co2_c", "to": "CO2t", "value": 1.0}, {"from": "co2_e", "to": "CO2t", "value": 1.0}, {"from": "accoa_c", "to": "CS", "value": 1.0}, {"from": "cit_c", "to": "CS", "value": 1.0}, {"from": "coa_c", "to": "CS", "value": 1.0}, {"from": "h2o_c", "to": "CS", "value": 1.0}, {"from": "h_c", "to": "CS", "value": 1.0}, {"from": "oaa_c", "to": "CS", "value": 1.0}, {"from": "h2o_c", "to": "CYTBD", "value": 1.0}, {"from": "h_c", "to": "CYTBD", "value": 2.0}, {"from": "h_e", "to": "CYTBD", "value": 2.0}, {"from": "o2_c", "to": "CYTBD", "value": 0.5}, {"from": "q8_c", "to": "CYTBD", "value": 1.0}, {"from": "q8h2_c", "to": "CYTBD", "value": 1.0}, {"from": "h_c", "to": "D_LACt2", "value": 1.0}, {"from": "h_e", "to": "D_LACt2", "value": 1.0}, {"from": "lac__D_c", "to": "D_LACt2", "value": 1.0}, {"from": "lac__D_e", "to": "D_LACt2", "value": 1.0}, {"from": "2pg_c", "to": "ENO", "value": 1.0}, {"from": "h2o_c", "to": "ENO", "value": 1.0}, {"from": "pep_c", "to": "ENO", "value": 1.0}, {"from": "etoh_c", "to": "ETOHt2r", "value": 1.0}, {"from": "etoh_e", "to": "ETOHt2r", "value": 1.0}, {"from": "h_c", "to": "ETOHt2r", "value": 1.0}, {"from": "h_e", "to": "ETOHt2r", "value": 1.0}, {"from": "ac_e", "to": "EX_ac_e", "value": 1.0}, {"from": "acald_e", "to": "EX_acald_e", "value": 1.0}, {"from": "akg_e", "to": "EX_akg_e", "value": 1.0}, {"from": "co2_e", "to": "EX_co2_e", "value": 1.0}, {"from": "etoh_e", "to": "EX_etoh_e", "value": 1.0}, {"from": "for_e", "to": "EX_for_e", "value": 1.0}, {"from": "fru_e", "to": "EX_fru_e", "value": 1.0}, {"from": "fum_e", "to": "EX_fum_e", "value": 1.0}, {"from": "glc__D_e", "to": "EX_glc__D_e", "value": 1.0}, {"from": "gln__L_e", "to": "EX_gln__L_e", "value": 1.0}, {"from": "glu__L_e", "to": "EX_glu__L_e", "value": 1.0}, {"from": "h_e", "to": "EX_h_e", "value": 1.0}, {"from": "h2o_e", "to": "EX_h2o_e", "value": 1.0}, {"from": "lac__D_e", "to": "EX_lac__D_e", "value": 1.0}, {"from": "mal__L_e", "to": "EX_mal__L_e", "value": 1.0}, {"from": "nh4_e", "to": "EX_nh4_e", "value": 1.0}, {"from": "o2_e", "to": "EX_o2_e", "value": 1.0}, {"from": "pi_e", "to": "EX_pi_e", "value": 1.0}, {"from": "pyr_e", "to": "EX_pyr_e", "value": 1.0}, {"from": "succ_e", "to": "EX_succ_e", "value": 1.0}, {"from": "dhap_c", "to": "FBA", "value": 1.0}, {"from": "fdp_c", "to": "FBA", "value": 1.0}, {"from": "g3p_c", "to": "FBA", "value": 1.0}, {"from": "f6p_c", "to": "FBP", "value": 1.0}, {"from": "fdp_c", "to": "FBP", "value": 1.0}, {"from": "h2o_c", "to": "FBP", "value": 1.0}, {"from": "pi_c", "to": "FBP", "value": 1.0}, {"from": "for_c", "to": "FORt2", "value": 1.0}, {"from": "for_e", "to": "FORt2", "value": 1.0}, {"from": "h_c", "to": "FORt2", "value": 1.0}, {"from": "h_e", "to": "FORt2", "value": 1.0}, {"from": "for_c", "to": "FORti", "value": 1.0}, {"from": "for_e", "to": "FORti", "value": 1.0}, {"from": "fum_c", "to": "FRD7", "value": 1.0}, {"from": "q8_c", "to": "FRD7", "value": 1.0}, {"from": "q8h2_c", "to": "FRD7", "value": 1.0}, {"from": "succ_c", "to": "FRD7", "value": 1.0}, {"from": "f6p_c", "to": "FRUpts2", "value": 1.0}, {"from": "fru_e", "to": "FRUpts2", "value": 1.0}, {"from": "pep_c", "to": "FRUpts2", "value": 1.0}, {"from": "pyr_c", "to": "FRUpts2", "value": 1.0}, {"from": "fum_c", "to": "FUM", "value": 1.0}, {"from": "h2o_c", "to": "FUM", "value": 1.0}, {"from": "mal__L_c", "to": "FUM", "value": 1.0}, {"from": "fum_c", "to": "FUMt2_2", "value": 1.0}, {"from": "fum_e", "to": "FUMt2_2", "value": 1.0}, {"from": "h_c", "to": "FUMt2_2", "value": 2.0}, {"from": "h_e", "to": "FUMt2_2", "value": 2.0}, {"from": "6pgl_c", "to": "G6PDH2r", "value": 1.0}, {"from": "g6p_c", "to": "G6PDH2r", "value": 1.0}, {"from": "h_c", "to": "G6PDH2r", "value": 1.0}, {"from": "nadp_c", "to": "G6PDH2r", "value": 1.0}, {"from": "nadph_c", "to": "G6PDH2r", "value": 1.0}, {"from": "13dpg_c", "to": "GAPD", "value": 1.0}, {"from": "g3p_c", "to": "GAPD", "value": 1.0}, {"from": "h_c", "to": "GAPD", "value": 1.0}, {"from": "nad_c", "to": "GAPD", "value": 1.0}, {"from": "nadh_c", "to": "GAPD", "value": 1.0}, {"from": "pi_c", "to": "GAPD", "value": 1.0}, {"from": "g6p_c", "to": "GLCpts", "value": 1.0}, {"from": "glc__D_e", "to": "GLCpts", "value": 1.0}, {"from": "pep_c", "to": "GLCpts", "value": 1.0}, {"from": "pyr_c", "to": "GLCpts", "value": 1.0}, {"from": "adp_c", "to": "GLNS", "value": 1.0}, {"from": "atp_c", "to": "GLNS", "value": 1.0}, {"from": "gln__L_c", "to": "GLNS", "value": 1.0}, {"from": "glu__L_c", "to": "GLNS", "value": 1.0}, {"from": "h_c", "to": "GLNS", "value": 1.0}, {"from": "nh4_c", "to": "GLNS", "value": 1.0}, {"from": "pi_c", "to": "GLNS", "value": 1.0}, {"from": "adp_c", "to": "GLNabc", "value": 1.0}, {"from": "atp_c", "to": "GLNabc", "value": 1.0}, {"from": "gln__L_c", "to": "GLNabc", "value": 1.0}, {"from": "gln__L_e", "to": "GLNabc", "value": 1.0}, {"from": "h2o_c", "to": "GLNabc", "value": 1.0}, {"from": "h_c", "to": "GLNabc", "value": 1.0}, {"from": "pi_c", "to": "GLNabc", "value": 1.0}, {"from": "akg_c", "to": "GLUDy", "value": 1.0}, {"from": "glu__L_c", "to": "GLUDy", "value": 1.0}, {"from": "h2o_c", "to": "GLUDy", "value": 1.0}, {"from": "h_c", "to": "GLUDy", "value": 1.0}, {"from": "nadp_c", "to": "GLUDy", "value": 1.0}, {"from": "nadph_c", "to": "GLUDy", "value": 1.0}, {"from": "nh4_c", "to": "GLUDy", "value": 1.0}, {"from": "gln__L_c", "to": "GLUN", "value": 1.0}, {"from": "glu__L_c", "to": "GLUN", "value": 1.0}, {"from": "h2o_c", "to": "GLUN", "value": 1.0}, {"from": "nh4_c", "to": "GLUN", "value": 1.0}, {"from": "akg_c", "to": "GLUSy", "value": 1.0}, {"from": "gln__L_c", "to": "GLUSy", "value": 1.0}, {"from": "glu__L_c", "to": "GLUSy", "value": 2.0}, {"from": "h_c", "to": "GLUSy", "value": 1.0}, {"from": "nadp_c", "to": "GLUSy", "value": 1.0}, {"from": "nadph_c", "to": "GLUSy", "value": 1.0}, {"from": "glu__L_c", "to": "GLUt2r", "value": 1.0}, {"from": "glu__L_e", "to": "GLUt2r", "value": 1.0}, {"from": "h_c", "to": "GLUt2r", "value": 1.0}, {"from": "h_e", "to": "GLUt2r", "value": 1.0}, {"from": "6pgc_c", "to": "GND", "value": 1.0}, {"from": "co2_c", "to": "GND", "value": 1.0}, {"from": "nadp_c", "to": "GND", "value": 1.0}, {"from": "nadph_c", "to": "GND", "value": 1.0}, {"from": "ru5p__D_c", "to": "GND", "value": 1.0}, {"from": "h2o_c", "to": "H2Ot", "value": 1.0}, {"from": "h2o_e", "to": "H2Ot", "value": 1.0}, {"from": "akg_c", "to": "ICDHyr", "value": 1.0}, {"from": "co2_c", "to": "ICDHyr", "value": 1.0}, {"from": "icit_c", "to": "ICDHyr", "value": 1.0}, {"from": "nadp_c", "to": "ICDHyr", "value": 1.0}, {"from": "nadph_c", "to": "ICDHyr", "value": 1.0}, {"from": "glx_c", "to": "ICL", "value": 1.0}, {"from": "icit_c", "to": "ICL", "value": 1.0}, {"from": "succ_c", "to": "ICL", "value": 1.0}, {"from": "h_c", "to": "LDH_D", "value": 1.0}, {"from": "lac__D_c", "to": "LDH_D", "value": 1.0}, {"from": "nad_c", "to": "LDH_D", "value": 1.0}, {"from": "nadh_c", "to": "LDH_D", "value": 1.0}, {"from": "pyr_c", "to": "LDH_D", "value": 1.0}, {"from": "accoa_c", "to": "MALS", "value": 1.0}, {"from": "coa_c", "to": "MALS", "value": 1.0}, {"from": "glx_c", "to": "MALS", "value": 1.0}, {"from": "h2o_c", "to": "MALS", "value": 1.0}, {"from": "h_c", "to": "MALS", "value": 1.0}, {"from": "mal__L_c", "to": "MALS", "value": 1.0}, {"from": "h_c", "to": "MALt2_2", "value": 2.0}, {"from": "h_e", "to": "MALt2_2", "value": 2.0}, {"from": "mal__L_c", "to": "MALt2_2", "value": 1.0}, {"from": "mal__L_e", "to": "MALt2_2", "value": 1.0}, {"from": "h_c", "to": "MDH", "value": 1.0}, {"from": "mal__L_c", "to": "MDH", "value": 1.0}, {"from": "nad_c", "to": "MDH", "value": 1.0}, {"from": "nadh_c", "to": "MDH", "value": 1.0}, {"from": "oaa_c", "to": "MDH", "value": 1.0}, {"from": "co2_c", "to": "ME1", "value": 1.0}, {"from": "mal__L_c", "to": "ME1", "value": 1.0}, {"from": "nad_c", "to": "ME1", "value": 1.0}, {"from": "nadh_c", "to": "ME1", "value": 1.0}, {"from": "pyr_c", "to": "ME1", "value": 1.0}, {"from": "co2_c", "to": "ME2", "value": 1.0}, {"from": "mal__L_c", "to": "ME2", "value": 1.0}, {"from": "nadp_c", "to": "ME2", "value": 1.0}, {"from": "nadph_c", "to": "ME2", "value": 1.0}, {"from": "pyr_c", "to": "ME2", "value": 1.0}, {"from": "h_c", "to": "NADH16", "value": 4.0}, {"from": "h_e", "to": "NADH16", "value": 3.0}, {"from": "nad_c", "to": "NADH16", "value": 1.0}, {"from": "nadh_c", "to": "NADH16", "value": 1.0}, {"from": "q8_c", "to": "NADH16", "value": 1.0}, {"from": "q8h2_c", "to": "NADH16", "value": 1.0}, {"from": "nad_c", "to": "NADTRHD", "value": 1.0}, {"from": "nadh_c", "to": "NADTRHD", "value": 1.0}, {"from": "nadp_c", "to": "NADTRHD", "value": 1.0}, {"from": "nadph_c", "to": "NADTRHD", "value": 1.0}, {"from": "nh4_c", "to": "NH4t", "value": 1.0}, {"from": "nh4_e", "to": "NH4t", "value": 1.0}, {"from": "o2_c", "to": "O2t", "value": 1.0}, {"from": "o2_e", "to": "O2t", "value": 1.0}, {"from": "accoa_c", "to": "PDH", "value": 1.0}, {"from": "co2_c", "to": "PDH", "value": 1.0}, {"from": "coa_c", "to": "PDH", "value": 1.0}, {"from": "nad_c", "to": "PDH", "value": 1.0}, {"from": "nadh_c", "to": "PDH", "value": 1.0}, {"from": "pyr_c", "to": "PDH", "value": 1.0}, {"from": "adp_c", "to": "PFK", "value": 1.0}, {"from": "atp_c", "to": "PFK", "value": 1.0}, {"from": "f6p_c", "to": "PFK", "value": 1.0}, {"from": "fdp_c", "to": "PFK", "value": 1.0}, {"from": "h_c", "to": "PFK", "value": 1.0}, {"from": "accoa_c", "to": "PFL", "value": 1.0}, {"from": "coa_c", "to": "PFL", "value": 1.0}, {"from": "for_c", "to": "PFL", "value": 1.0}, {"from": "pyr_c", "to": "PFL", "value": 1.0}, {"from": "f6p_c", "to": "PGI", "value": 1.0}, {"from": "g6p_c", "to": "PGI", "value": 1.0}, {"from": "13dpg_c", "to": "PGK", "value": 1.0}, {"from": "3pg_c", "to": "PGK", "value": 1.0}, {"from": "adp_c", "to": "PGK", "value": 1.0}, {"from": "atp_c", "to": "PGK", "value": 1.0}, {"from": "6pgc_c", "to": "PGL", "value": 1.0}, {"from": "6pgl_c", "to": "PGL", "value": 1.0}, {"from": "h2o_c", "to": "PGL", "value": 1.0}, {"from": "h_c", "to": "PGL", "value": 1.0}, {"from": "2pg_c", "to": "PGM", "value": 1.0}, {"from": "3pg_c", "to": "PGM", "value": 1.0}, {"from": "h_c", "to": "PIt2r", "value": 1.0}, {"from": "h_e", "to": "PIt2r", "value": 1.0}, {"from": "pi_c", "to": "PIt2r", "value": 1.0}, {"from": "pi_e", "to": "PIt2r", "value": 1.0}, {"from": "co2_c", "to": "PPC", "value": 1.0}, {"from": "h2o_c", "to": "PPC", "value": 1.0}, {"from": "h_c", "to": "PPC", "value": 1.0}, {"from": "oaa_c", "to": "PPC", "value": 1.0}, {"from": "pep_c", "to": "PPC", "value": 1.0}, {"from": "pi_c", "to": "PPC", "value": 1.0}, {"from": "adp_c", "to": "PPCK", "value": 1.0}, {"from": "atp_c", "to": "PPCK", "value": 1.0}, {"from": "co2_c", "to": "PPCK", "value": 1.0}, {"from": "oaa_c", "to": "PPCK", "value": 1.0}, {"from": "pep_c", "to": "PPCK", "value": 1.0}, {"from": "amp_c", "to": "PPS", "value": 1.0}, {"from": "atp_c", "to": "PPS", "value": 1.0}, {"from": "h2o_c", "to": "PPS", "value": 1.0}, {"from": "h_c", "to": "PPS", "value": 2.0}, {"from": "pep_c", "to": "PPS", "value": 1.0}, {"from": "pi_c", "to": "PPS", "value": 1.0}, {"from": "pyr_c", "to": "PPS", "value": 1.0}, {"from": "accoa_c", "to": "PTAr", "value": 1.0}, {"from": "actp_c", "to": "PTAr", "value": 1.0}, {"from": "coa_c", "to": "PTAr", "value": 1.0}, {"from": "pi_c", "to": "PTAr", "value": 1.0}, {"from": "adp_c", "to": "PYK", "value": 1.0}, {"from": "atp_c", "to": "PYK", "value": 1.0}, {"from": "h_c", "to": "PYK", "value": 1.0}, {"from": "pep_c", "to": "PYK", "value": 1.0}, {"from": "pyr_c", "to": "PYK", "value": 1.0}, {"from": "h_c", "to": "PYRt2", "value": 1.0}, {"from": "h_e", "to": "PYRt2", "value": 1.0}, {"from": "pyr_c", "to": "PYRt2", "value": 1.0}, {"from": "pyr_e", "to": "PYRt2", "value": 1.0}, {"from": "ru5p__D_c", "to": "RPE", "value": 1.0}, {"from": "xu5p__D_c", "to": "RPE", "value": 1.0}, {"from": "r5p_c", "to": "RPI", "value": 1.0}, {"from": "ru5p__D_c", "to": "RPI", "value": 1.0}, {"from": "h_c", "to": "SUCCt2_2", "value": 2.0}, {"from": "h_e", "to": "SUCCt2_2", "value": 2.0}, {"from": "succ_c", "to": "SUCCt2_2", "value": 1.0}, {"from": "succ_e", "to": "SUCCt2_2", "value": 1.0}, {"from": "h_c", "to": "SUCCt3", "value": 1.0}, {"from": "h_e", "to": "SUCCt3", "value": 1.0}, {"from": "succ_c", "to": "SUCCt3", "value": 1.0}, {"from": "succ_e", "to": "SUCCt3", "value": 1.0}, {"from": "fum_c", "to": "SUCDi", "value": 1.0}, {"from": "q8_c", "to": "SUCDi", "value": 1.0}, {"from": "q8h2_c", "to": "SUCDi", "value": 1.0}, {"from": "succ_c", "to": "SUCDi", "value": 1.0}, {"from": "adp_c", "to": "SUCOAS", "value": 1.0}, {"from": "atp_c", "to": "SUCOAS", "value": 1.0}, {"from": "coa_c", "to": "SUCOAS", "value": 1.0}, {"from": "pi_c", "to": "SUCOAS", "value": 1.0}, {"from": "succ_c", "to": "SUCOAS", "value": 1.0}, {"from": "succoa_c", "to": "SUCOAS", "value": 1.0}, {"from": "e4p_c", "to": "TALA", "value": 1.0}, {"from": "f6p_c", "to": "TALA", "value": 1.0}, {"from": "g3p_c", "to": "TALA", "value": 1.0}, {"from": "s7p_c", "to": "TALA", "value": 1.0}, {"from": "h_c", "to": "THD2", "value": 2.0}, {"from": "h_e", "to": "THD2", "value": 2.0}, {"from": "nad_c", "to": "THD2", "value": 1.0}, {"from": "nadh_c", "to": "THD2", "value": 1.0}, {"from": "nadp_c", "to": "THD2", "value": 1.0}, {"from": "nadph_c", "to": "THD2", "value": 1.0}, {"from": "g3p_c", "to": "TKT1", "value": 1.0}, {"from": "r5p_c", "to": "TKT1", "value": 1.0}, {"from": "s7p_c", "to": "TKT1", "value": 1.0}, {"from": "xu5p__D_c", "to": "TKT1", "value": 1.0}, {"from": "e4p_c", "to": "TKT2", "value": 1.0}, {"from": "f6p_c", "to": "TKT2", "value": 1.0}, {"from": "g3p_c", "to": "TKT2", "value": 1.0}, {"from": "xu5p__D_c", "to": "TKT2", "value": 1.0}, {"from": "dhap_c", "to": "TPI", "value": 1.0}, {"from": "g3p_c", "to": "TPI", "value": 1.0}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
